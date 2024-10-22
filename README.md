@@ -2,7 +2,7 @@
 Code for the TAURUS study
 
 Contents:
-i) deriving the inflammtory score
+i) deriving the inflammatory score
 ii) differential abundance
 iii) cell-cell interaction
 iv) differential expression with pathway analysis
