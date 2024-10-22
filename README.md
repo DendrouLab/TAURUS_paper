@@ -1,5 +1,5 @@
 # TAURUS_paper
-Code for the TAURUS study
+Code for the TAURUS study (Nature Immunology in press)
 
 Contents:
 i) deriving the inflammatory score
