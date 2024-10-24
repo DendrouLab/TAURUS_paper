@@ -1,0 +1,149 @@
+---
+title: "GSEA_analysis_cluster_profiler:UC TreatmentRemisison interaction With Site DEG"
+author: "Devika Agarwal"
+date: "2024-06-26"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+library(SingleCellExperiment)
+library(scran)
+library(scuttle)
+library(scater)
+library(distinct)
+library(qs)
+library(tidyverse)
+library(clusterProfiler)
+library(enrichplot)
+library(ReactomePA)
+library(fgsea)
+library(EnhancedVolcano)
+library(data.table)
+
+knitr::opts_chunk$set(echo = TRUE)
+```
+# MAST longitudinal Remisison/Treatmnet itneraction DEG in UC (With Site) for final_analysis level annotations
+
+```{r}
+lf <- list.files(path= "../Treatment_Remission_Site/UC/final_analysis/results/", pattern="MAST_fcHurdle_summary", full.names = T)
+```
+
+```{r}
+de_res <- lapply(lf, function(x) fread(x))
+names(de_res) <- gsub("MAST_fcHurdle_summary_remissionNR_treatmentpost_with_siteUC_remission_R_NR_", "", basename(lf))
+```
+
+```{r}
+names(de_res) <- gsub(".csv", "", names(de_res))
+```
+
+
+```{r}
+for(i in names(de_res)){
+  de_res[[i]] <- de_res[[i]] %>% drop_na()
+  de_res[[i]]$log10pvalue_signlogfc <- -log10(de_res[[i]]$`Pr(>Chisq)`) *sign(de_res[[i]]$coef) 
+}
+```
+
+
+
+```{r}
+de_res_df <- bind_rows(de_res,.id = "celltype")
+```
+
+```{r}
+de_res_vector <- split(de_res_df$log10pvalue_signlogfc,de_res_df$celltype)
+```
+
+
+```{r}
+for(i in names(de_res_vector)){
+  tmp <- de_res_vector[[i]]
+  names(tmp) <- de_res[[i]]$primerid
+  tmp = sort(tmp, decreasing = TRUE)
+  de_res_vector[[i]] <- tmp
+  rm(tmp)
+}
+```
+
+Read in GO BP gene set from MsigDB
+
+```{r}
+go_bp_gmt <- read.gmt("../databases_misgdb/msigdb_v2023.2.Hs_GMTs/c5.go.bp.v2023.2.Hs.symbols.gmt")
+```
+
+```{r}
+go_bp_msigdb_UC <- compareCluster(de_res_vector, fun="GSEA", TERM2GENE= go_bp_gmt, minGSSize=30,maxGSSize = 300, seed=764,eps=0,nPermSimple = 10000)
+```
+
+```{r}
+go_bp_UC_df <- go_bp_msigdb_UC@compareClusterResult
+```
+
+```{r}
+qsave(go_bp_msigdb_UC, file = "../Treatment_Remission_Site/UC/final_analysis/Treatment_remission_interaction_with_site_final_analysis_UC_Cluster_Profiler_Msigdb_GOBP_FGSEA_obj.qs")
+```
+
+```{r}
+library(openxlsx)
+```
+
+```{r}
+write.xlsx(go_bp_UC_df, '../Treatment_Remission_Site/UC/final_analysis/Treatment_remission_interaction_with_site_UC_final_analysis_Msig_DB_Go_BP_GSEA_results.xlsx')
+```
+
+
+Read in reactome gene set from MsigDB
+
+```{r}
+reactome_gmt <- read.gmt("../databases_misgdb/msigdb_v2023.2.Hs_GMTs/c2.cp.reactome.v2023.2.Hs.symbols.gmt")
+```
+
+```{r}
+reactome_msigdb_UC <- compareCluster(de_res_vector, fun="GSEA", TERM2GENE= reactome_gmt, minGSSize=20,maxGSSize = 300, seed=764,eps=0,nPermSimple = 10000)
+```
+
+```{r}
+reactome_UC_df <- reactome_msigdb_UC@compareClusterResult
+```
+
+```{r}
+qsave(reactome_msigdb_UC, file = "../Treatment_Remission_Site/UC/final_analysis/Treatment_remission_interaction_with_site_final_analysis_UC_Cluster_Profiler_Msigdb_Reactome_FGSEA_obj.qs")
+```
+
+```{r}
+library(openxlsx)
+```
+
+```{r}
+write.xlsx(reactome_UC_df, '../Treatment_Remission_Site/UC/final_analysis/Treatment_remission_interaction_with_site_UC_final_analysis_Msig_DB_Reactome_GSEA_results.xlsx')
+```
+
+
+
+
+Read in Hallmarks gene set from MsigDB
+
+```{r}
+hallmarks_gmt <- read.gmt("../databases_misgdb/msigdb_v2023.2.Hs_GMTs/h.all.v2023.2.Hs.symbols.gmt")
+```
+
+```{r}
+hallmarks_msigdb_UC <- compareCluster(de_res_vector, fun="GSEA", TERM2GENE= hallmarks_gmt, minGSSize=20,maxGSSize = 300, seed=764,eps=0,nPermSimple = 10000)
+```
+
+```{r}
+hallmarks_UC_df <- hallmarks_msigdb_UC@compareClusterResult
+```
+
+```{r}
+qsave(hallmarks_msigdb_UC, file = "../Treatment_Remission_Site/UC/final_analysis/Treatment_remission_interaction_with_site_final_analysis_UC_Cluster_Profiler_Msigdb_hallmarks_FGSEA_obj.qs")
+```
+
+```{r}
+library(openxlsx)
+```
+
+```{r}
+write.xlsx(hallmarks_UC_df, '../Treatment_Remission_Site/UC/final_analysis/Treatment_remission_interaction_with_site_UC_final_analysis_Msig_DB_hallmarks_GSEA_results.xlsx')
+```
